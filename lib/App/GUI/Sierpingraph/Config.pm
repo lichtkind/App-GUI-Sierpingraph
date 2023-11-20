@@ -5,12 +5,11 @@ use File::Spec;
 
 package App::GUI::Sierpingraph::Config;
 
-my $file = '.sierpingraph';
+my $file_name = File::Spec->catfile( File::HomeDir->my_home, '.config', 'sierpingraph');
+
 my $dir = '';
 my $default = {
     file_base_dir => '~',
-    file_base_name => 'good',
-    file_base_counter => 0,
     file_base_ending => 'png',
     image_size => 600,
     open_dir => '~',
@@ -18,8 +17,31 @@ my $default = {
     write_dir => '~',
     last_settings => [],
     tips => 1,
+    color_set => {
+        grey => ['#FFF', '#DDD', '#BBB', '#999', '#777','#555', '#333', '#111' ],
+        sunset => ['#FFF', '#F9E595', '#A1680C', '#B63A3E' ],
+        basic  => ['#FFF', '#F00', '#0F0', '#00F', '#FF0', '#0FF', '#F0F','#000' ],
+        dawn   => [ 'white', '#f9d87b', '#936d1a', '#bf3136', '#8f1416', '#99158b', '#1d1d7c', '#111111', 'black' ],
+        day    => [ 'white', '#ffcf3d', '#e25555', '#e65c60', '#4acfab', '#48614a', 'gray20',  '#111111', 'black' ],
+        skye   => [ 'white', '#ffcf3d', '#173fab', '#8e8e8e', '#8e8e8e', '#8e8e8e', '#8e8e8e', '#8e8e8e', 'black' ],
+        sunset => [ 'white', '#f9d87b', '#936d1a', '#bf3136', '#94148e', '#c3baee', '#1d1d7c', '#111111', 'black' ],
+    },
     color => {
-        bright_blue      => [  98, 156, 249 ],
+        white            => [ 255, 255, 255],
+        black            => [   0,   0,   0],
+        red              => [ 255,   0,   0],
+        green            => [   0, 128,   0],
+        blue             => [   0,   0, 255],
+        yellow           => [ 255, 255,   0],
+        purple           => [ 128,   0, 128],
+        pink             => [ 255, 192, 203],
+        peach            => [ 250, 125, 125],
+        plum             => [ 221, 160, 221],
+        mauve            => [ 200, 125, 125],
+        brown            => [ 165,  42,  42],
+        grey             => [ 225, 225, 225],
+        aliceblue        => [ 240, 248, 255],
+        bright_blue      => [  98, 156, 249],
         marsala          => [ 149,  82,  81],
         radiandorchid    => [ 181, 101, 167],
         emerald          => [   0, 155, 119],
@@ -178,40 +200,40 @@ my $default = {
 
 sub new {
     my ($pkg) = @_;
-    for my $d ('.', File::HomeDir->my_home, File::HomeDir->my_documents){
-        my $path = File::Spec->catfile( $d, $file );
-        $dir = $d, last if -r $path;
-    }
-    my $data = $dir 
-             ? load( $pkg, File::Spec->catfile( $dir, $file ) )
+    my $data = -r $file_name
+             ? load( $pkg, $file_name )
              : $default;
-    $dir ||= File::HomeDir->my_home;
-    bless { path => File::Spec->catfile( $dir, $file ), data => $data };
+    bless { path => $file_name, data => $data };
 }
 
 sub load {
     my ($self, $file) = @_;
     my $data = {};
     open my $FH, '<', $file or return "could not read $file: $!";
-    my $cat = '';
+    my $category = '';
     while (<$FH>) {
         chomp;
         next unless $_ or substr( $_, 0, 1) eq '#';
-        if    (/^\s*(\w+):/)              { $data->{$cat} = [];    $cat = $1 }
-        elsif (/^\s+-\s+(.+)\s*$/)        { push @{$data->{$cat}}, $1        }
-        elsif (/^\s+\+\s+(\w+)\s*=\s*\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]/) 
-                                          { $data->{$cat}{$1} = [$2, $3, $4] }
-        elsif (/\s*(\w+)\s*=\s*(.+)\s*$/) { $data->{$1} = $2; $cat = ''      }
+        if    (/^\s*(\w+):\s*$/)          { $category = $1; $data->{$category} = []; }
+        elsif (/^\s+-\s+(.+)\s*$/)        { push @{$data->{$category}}, $1;          }
+        elsif (/^\s+\+\s+(\w+)\s*=\s*\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]/)
+                                          { $data->{$category} = {} if ref $data->{$category} ne 'HASH';
+                                            $data->{$category}{$1} = [$2, $3, $4];   }
+        elsif (/^\s+\+\s+(\w+)\s*=\s*\[\s*(.+)\s*\]/)
+                                          { $data->{$category} = {} if ref $data->{$category} ne 'HASH';
+                                            $data->{$category}{$1} = [map {tr/ //d; $_} split /,/, $2] }
+        elsif (/\s*(\w+)\s*=\s*(.+)\s*$/) { $data->{$1} = $2; $category =  '';}
     }
     close $FH;
     $data;
 }
-    
+
 sub save {
     my ($self) = @_;
     my $data = $self->{'data'};
     my $file = $self->{'path'};
     open my $FH, '>', $file or return "could not write $file: $!";
+    $" = ',';
     for my $key (sort keys %$data){
         my $val = $data->{ $key };
         if (ref $val eq 'ARRAY'){
@@ -219,7 +241,7 @@ sub save {
             say $FH "  - $_" for @$val;
         } elsif (ref $val eq 'HASH'){
             say $FH "$key:";
-            say $FH "  + $_ = [ $val->{$_}[0], $val->{$_}[1], $val->{$_}[2] ]" for sort keys %$val;
+            say $FH "  + $_ = [ @{$val->{$_}} ]" for sort keys %$val;
         } elsif (not ref $val){
             say $FH "$key = $val";
         }
@@ -240,7 +262,7 @@ sub set_value {
 
 sub add_setting_file {
     my ($self, $file) = @_;
-    $file = App::GUI::Harmonograph::Settings::shrink_path( $file );
+    $file = App::GUI::Sierpingraph::Settings::shrink_path( $file );
     for my $f (@{$self->{'data'}{'last_settings'}}) { return if $f eq $file }
     push @{$self->{'data'}{'last_settings'}}, $file;
     shift @{$self->{'data'}{'last_settings'}} if @{$self->{'data'}{'last_settings'}} > 15;
@@ -249,9 +271,9 @@ sub add_setting_file {
 sub add_color {
     my ($self, $name, $color) = @_;
     return 'not a color' unless ref $color eq 'ARRAY' and @$color == 3
-        and int $color->[0] == $color->[0] and $color->[0] < 256 and $color->[0] >= 0 
+        and int $color->[0] == $color->[0] and $color->[0] < 256 and $color->[0] >= 0
         and int $color->[1] == $color->[1] and $color->[1] < 256 and $color->[1] >= 0
-        and int $color->[2] == $color->[2] and $color->[2] < 256 and $color->[2] >= 0; 
+        and int $color->[2] == $color->[2] and $color->[2] < 256 and $color->[2] >= 0;
     return 'color name alread taken' if exists $self->{'data'}{'color'}{ $name };
     $self->{'data'}{'color'}{ $name } = $color;
 }
