@@ -3,14 +3,12 @@ use warnings;
 use utf8;
 use Wx::AUI;
 
-# julia
-# slow, exp more formula, colors, color mapping
-# optional color smoothing
+#
 
 package App::GUI::Sierpingraph::Frame;
 use base qw/Wx::Frame/;
 use App::GUI::Sierpingraph::Frame::Panel::Form;
-use App::GUI::Sierpingraph::Frame::Panel::Mapping;
+use App::GUI::Sierpingraph::Frame::Panel::Grid;
 use App::GUI::Sierpingraph::Frame::Panel::Color;
 use App::GUI::Sierpingraph::Frame::Part::Board;
 use App::GUI::Sierpingraph::Dialog::About;
@@ -32,14 +30,18 @@ sub new {
 
     # create GUI parts
     $self->{'tabs'}           = Wx::AuiNotebook->new($self, -1, [-1,-1], [-1,-1], &Wx::wxAUI_NB_TOP );
-    $self->{'tab'}{'form'}    = App::GUI::Sierpingraph::Frame::Panel::Form->new( $self->{'tabs'} );
-    $self->{'tab'}{'mapping'} = App::GUI::Sierpingraph::Frame::Panel::Mapping->new( $self->{'tabs'} );
+    $self->{'tab'}{'general'} = App::GUI::Sierpingraph::Frame::Panel::Form->new( $self->{'tabs'} );
+    $self->{'tab'}{'grid'}    = App::GUI::Sierpingraph::Frame::Panel::Grid->new( $self->{'tabs'} );
+    $self->{'tab'}{'shape'}   = App::GUI::Sierpingraph::Frame::Panel::Grid->new( $self->{'tabs'} );
+    $self->{'tab'}{'bequest'} = App::GUI::Sierpingraph::Frame::Panel::Grid->new( $self->{'tabs'} );
     $self->{'tab'}{'color'}   = App::GUI::Sierpingraph::Frame::Panel::Color->new( $self->{'tabs'}, $self->{'config'} );
-    $self->{'tabs'}->AddPage( $self->{'tab'}{'form'},     'Form Settings');
-    $self->{'tabs'}->AddPage( $self->{'tab'}{'mapping'},  'Color Mapping');
-    $self->{'tabs'}->AddPage( $self->{'tab'}{'color'},    'Color Selection');
+    $self->{'tabs'}->AddPage( $self->{'tab'}{'general'},  'General');
+    $self->{'tabs'}->AddPage( $self->{'tab'}{'grid'},     'Grid');
+    $self->{'tabs'}->AddPage( $self->{'tab'}{'shape'},    'Shape');
+    $self->{'tabs'}->AddPage( $self->{'tab'}{'bequest'},  'Bequest');
+    $self->{'tabs'}->AddPage( $self->{'tab'}{'color'},    'Colors');
 
-    $self->{'tab'}{$_}->SetCallBack( sub { $self->sketch( ) } ) for qw/form mapping/;
+    $self->{'tab'}{$_}->SetCallBack( sub { $self->sketch( ) } ) for qw/general grid/;
 
     $self->{'progress'}            = App::GUI::Sierpingraph::Widget::ProgressBar->new( $self, 450, 5, [20, 20, 110]);
     $self->{'board'}               = App::GUI::Sierpingraph::Frame::Part::Board->new( $self , 600, 600 );
@@ -175,7 +177,7 @@ sub update_recent_settings_menu {
 
 sub init {
     my ($self) = @_;
-    $self->{'tab'}{$_}->init() for qw/form color/;
+    $self->{'tab'}{$_}->init() for qw/general color/;
     $self->sketch( );
     $self->SetStatusText( "all settings are set to default", 1);
     $self->show_settings_save(1);
@@ -200,15 +202,15 @@ sub sketch {
 sub get_data {
     my $self = shift;
     {
-        form => $self->{'tab'}{'form'}->get_data,
-        mapping => $self->{'tab'}{'mapping'}->get_data,
+        general => $self->{'tab'}{'general'}->get_data,
+        grid => $self->{'tab'}{'grid'}->get_data,
         color => $self->{'tab'}{'color'}->get_settings,
     }
 }
 sub set_data {
     my ($self, $data) = @_;
     return unless ref $data eq 'HASH';
-    $self->{'tab'}{$_}->set_data( $data->{$_} ) for qw/form mapping/;
+    $self->{'tab'}{$_}->set_data( $data->{$_} ) for qw/general grid/;
     $self->{'tab'}{'color'}->set_settings( $data->{'color'} );
 }
 
@@ -285,7 +287,7 @@ sub open_setting_file {
         my $dir = App::GUI::Sierpingraph::Settings::extract_dir( $file );
         $self->{'config'}->set_value('open_dir', $dir);
         $self->{'config'}->add_setting_file( $file );
-        $self->{'tab'}{'color'}->set_state_count( $settings->{'mapping'}{'select'}-1 );
+        $self->{'tab'}{'color'}->set_state_count( $settings->{'grid'}{'select'}-1 );
         $self->update_recent_settings_menu();
         $self->show_settings_save(1);
         $settings;

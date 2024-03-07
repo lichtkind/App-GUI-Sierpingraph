@@ -72,119 +72,17 @@ sub set_settings {
 
 sub paint {
     my( $self, $dc, $width, $height ) = @_;
+    my $img = Wx::Image->new($self->{'size'}{'x'}, $self->{'size'}{'y'});
+
     my $background_color = Wx::Colour->new( 255, 255, 255 );
     $dc->SetBackground( Wx::Brush->new( $background_color, &Wx::wxBRUSHSTYLE_SOLID ) );
     $dc->Clear();
-
-    my $progress = $self->GetParent->{'progress'};
-    my $colors = $self->{'data'}{'mapping'}{'select'} * ($self->{'data'}{'mapping'}{'gradient'}+1)
-               * $self->{'data'}{'mapping'}{'repeat'} * $self->{'data'}{'mapping'}{'group'};
-    my @color = ();
-    if ($self->{'data'}{'mapping'}{'color'}){
-        $self->{'data'}{'color'}{ $self->{'data'}{'mapping'}{'select'} } = $self->{'data'}{'color'}{ 8 };
-        for my $i (0 .. $self->{'data'}{'mapping'}{'select'} - 1) {
-            my @gradient = map {[$_->values]}
-                           color($self->{'data'}{'color'}{$i})->gradient( to => $self->{'data'}{'color'}{$i+1},
-                                                                          steps => $self->{'data'}{'mapping'}{'gradient'}+2,
-                                                                          dynamic => $self->{'data'}{'mapping'}{'dynamics'},
-                                                                        );
-            pop @gradient;
-            @color = (@color, @gradient);
-        }
-    } else {
-            @color = map {[$_->values]} color('white')->gradient( to => 'black',
-                                                               steps => $self->{'data'}{'mapping'}{'select'} * $self->{'data'}{'mapping'}{'gradient'},
-                                                             dynamic => $self->{'data'}{'mapping'}{'dynamics'},
-                                                                );
-    }
-    if ($self->{'data'}{'mapping'}{'group'} > 1){
-        my @temp = @color;
-        @color = ();
-        for my $color (@temp){
-            push @color, $color for 1 .. $self->{'data'}{'mapping'}{'group'};
-        }
-    }
-    if ($self->{'data'}{'mapping'}{'repeat'} > 1){
-        my @temp = @color;
-        @color = (@color, @temp) for 2 .. $self->{'data'}{'mapping'}{'repeat'};
-    }
-    if ($self->{'flag'}{'draw'}){
-        $progress->add_percentage( $_ / $#color * 100, $color[$_] ) for 0 .. $#color;
-        $progress->full;
-    }
-
-
-    $color[$_] = [0,0,0] for $colors .. $self->{'data'}{'form'}{'stop_value'}; # background color
-
-
-    my $zoom_size = 4 * (10** (-$self->{'data'}{'form'}{'zoom'}));
-    my $stop = $self->{'data'}{'form'}{'stop_value'};
-    my $const_a = $self->{'data'}{'form'}{'const_a'};
-    my $const_b = $self->{'data'}{'form'}{'const_b'};
-    my $var_c = $self->{'data'}{'form'}{'var_c'};
-    my $var_d = $self->{'data'}{'form'}{'var_d'};
-    my $x_delta = $zoom_size;
-    my $x_delta_step = $x_delta / $self->{'size'}{'x'};
-    my $x_min = $self->{'data'}{'form'}{'pos_x'} - ($x_delta / 2);
-    my $y_delta = $zoom_size;
-    my $y_delta_step = $y_delta / $self->{'size'}{'y'};
-    my $y_min = $self->{'data'}{'form'}{'pos_y'} - ($y_delta / 2);
-
-    my $metric = { '|var|' => '($x*$x) + ($y*$y)', '|x|' => 'abs($x)', '|y|' => 'abs($y)',
-                   '|x+y|' => 'abs($x+$y)',    '|x|+|y|' => 'abs($x)+abs($y)', 'x+y' => '$x+$y',
-                    'x*y'  => '$x*$y',           '|x*y|' => 'abs($x*$y)',
-                    'x-y' => '$x-$y', 'y-x' => '$y-$x',
-    };
-    if ($self->{'flag'}{'sketch'}){
-        $x_delta_step *= SKETCH_FACTOR;
-        $y_delta_step *= SKETCH_FACTOR;
-        $colors = 20 if $colors > 20;
-        $stop = 100 if $stop > 100;
-    }
-
     my $t0 = Benchmark->new();
-    my $img = Wx::Image->new($self->{'size'}{'x'},$self->{'size'}{'y'});
-    my ($x_const, $y_const, $x, $y, $x_old, $y_old);
 
-    my $code = 'my ($x_num, $x_pix) = ($x_min, 0);'."\n";
-    $code .= $self->{'flag'}{'sketch'}
-           ? 'for (0 .. $self->{size}{x} / SKETCH_FACTOR){'."\n"
-           : 'for (0 .. $self->{size}{x}){'."\n";
-    $code .= '  my ($y_num, $y_pix) = ($y_min, $self->{size}{y});'."\n";
-    $code .= $self->{'flag'}{'sketch'}
-           ? '  for (0 .. $self->{size}{y} / SKETCH_FACTOR){'."\n"
-           : '  for (0 .. $self->{size}{y}){'."\n";
-    $code .= ($self->{'data'}{'form'}{'type'} eq 'Julia')
-           ? '    ($x, $y) = ($x_num, $y_num);'."\n".
-             '    ($x_const, $y_const) = ($const_a, $const_b);'."\n"
-           : '    ($x, $y) = ($const_a, $const_b);'."\n".
-             '    ($x_const, $y_const) = ($x_num, $y_num);'."\n";
-    $code .= '    for my $i (0 .. $colors){'."\n";
-    $code .= '      $x_old = $x;'."\n";
-    $code .= '      $y_old = $y;'."\n";
-    $code .= '      ($x, $y) = (($x * $x_old) - ($y * $y_old), ($x * $y_old) + ($x_old * $y));'."\n" for 2 .. $self->{'data'}{'form'}{'exp'};
-    $code .= '      $x += $x_old * $var_c;'."\n" if $var_c;
-    $code .= '      $y += $y_old * $var_d;'."\n" if $var_d;
-    $code .= '      $x += $x_const;'."\n";
-    $code .= '      $y += $y_const;'."\n";
-    $code .= '      if ('.$metric->{$self->{'data'}{'form'}{'stop_metric'}}.' > $stop){'."\n";
-    $code .= '        $img->SetRGB( $x_pix,   $y_pix,   @{$color[$i]});'."\n";
-    $code .= '        $img->SetRGB( $x_pix,   $y_pix+1, @{$color[$i]});'."\n".
-             '        $img->SetRGB( $x_pix+1, $y_pix,   @{$color[$i]});'."\n".
-             '        $img->SetRGB( $x_pix+1, $y_pix+1, @{$color[$i]});'."\n".
-             '        $img->SetRGB( $x_pix+1, $y_pix+2, @{$color[$i]});'."\n".
-             '        $img->SetRGB( $x_pix+2, $y_pix+1, @{$color[$i]});'."\n" if $self->{'flag'}{'sketch'};
-    $code .= '        last;'."\n".'      }'."\n".'    }'."\n";
-    $code .= '    $y_num += $y_delta_step;'."\n";
-    $code .= $self->{'flag'}{'sketch'}
-           ? '    $y_pix -= SKETCH_FACTOR;'."\n"
-           : '    $y_pix --;'."\n";
-    $code .= '  }'."\n";
-    $code .= '  $x_num += $x_delta_step;'."\n";
-    $code .= $self->{'flag'}{'sketch'}
-           ? '  $x_pix += SKETCH_FACTOR;'."\n"
-           : '  $x_pix ++;'."\n";
-    $code .= '}'."\n";
+#    say "compile:",timestr(timediff(Benchmark->new, $t0));
+    $t0 = Benchmark->new();
+
+    my $code = ''."\n";
 
     eval $code; # say $code;
     die "bad iter code - $@ :\n$code" if $@; # say "comp: ",timestr( timediff( Benchmark->new(), $t) );

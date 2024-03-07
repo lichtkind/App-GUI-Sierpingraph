@@ -30,7 +30,7 @@ __END__
 
 =head1 NAME
 
-App::GUI::Sierpingraph - drawing Mandelbrot and Julia fractals
+App::GUI::Sierpingraph - drawing iterative geometric fractals
 
 =head1 SYNOPSIS
 
