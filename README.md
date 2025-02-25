@@ -66,7 +66,7 @@
     WxPerl (Wx) 0.9
 
 
-[SEE ALSO](https://lichtkind/code)
+[SEE ALSO](https://lichtkind.de/code)
 
 [CHANGES](https://github.com/lichtkind/App-GUI-Sierpingraph/blob/main/Changes) (with roadmap)
 
