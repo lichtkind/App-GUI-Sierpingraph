@@ -30,7 +30,7 @@ __END__
 
 =head1 NAME
 
-App::GUI::Sierpingraph - drawing iterative geometric fractals
+App::GUI::Sierpingraph - drawing fractals by linear transformations
 
 =head1 SYNOPSIS
 

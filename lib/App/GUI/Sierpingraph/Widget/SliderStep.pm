@@ -1,11 +1,11 @@
-use v5.12;
-use warnings;
-use Wx;
 
 # combined widget with a slider that dials in a value between 0 and 1
 # and 2 butons that trigger and event to add or subtract this value
 
 package App::GUI::Sierpingraph::Widget::SliderStep;
+use v5.12;
+use warnings;
+use Wx;
 use base qw/Wx::Panel/;
 my $resolution = 100;
 

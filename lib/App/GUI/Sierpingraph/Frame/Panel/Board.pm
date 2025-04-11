@@ -2,7 +2,7 @@ use v5.12;
 use warnings;
 use Wx;
 
-package App::GUI::Sierpingraph::Frame::Part::Board;
+package App::GUI::Sierpingraph::Frame::Panel::Board;
 use base qw/Wx::Panel/;
 
 use Graphics::Toolkit::Color qw/color/;
@@ -64,7 +64,7 @@ sub sketch {
 sub set_settings {
     my( $self, $data ) = @_;
     return unless ref $data eq 'HASH';
-    $self->GetParent->{'progress'}->reset;
+    $self->GetParent->{'progress_bar'}->reset;
     $self->{'data'} = $data;
     $self->{'flag'}{'new'} = 1;
 }

@@ -2,7 +2,7 @@ use v5.12;
 use warnings;
 use Wx;
 
-package App::GUI::Sierpingraph::Frame::Panel::Form;
+package App::GUI::Sierpingraph::Frame::Tab::Form;
 use base qw/Wx::Panel/;
 use App::GUI::Sierpingraph::Widget::SliderStep;
 

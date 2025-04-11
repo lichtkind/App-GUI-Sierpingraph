@@ -1,20 +1,20 @@
-use v5.12;
-use warnings;
-use utf8;
-use Wx::AUI;
 
 #
 
 package App::GUI::Sierpingraph::Frame;
+use v5.12;
+use warnings;
+use utf8;
 use base qw/Wx::Frame/;
-use App::GUI::Sierpingraph::Frame::Panel::Form;
-use App::GUI::Sierpingraph::Frame::Panel::Grid;
-use App::GUI::Sierpingraph::Frame::Panel::Color;
-use App::GUI::Sierpingraph::Frame::Part::Board;
-use App::GUI::Sierpingraph::Dialog::About;
-use App::GUI::Sierpingraph::Widget::ProgressBar;
-use App::GUI::Sierpingraph::Settings;
+use Wx::AUI;
 use App::GUI::Sierpingraph::Config;
+use App::GUI::Sierpingraph::Settings;
+use App::GUI::Sierpingraph::Dialog::About;
+use App::GUI::Sierpingraph::Frame::Tab::Form;
+use App::GUI::Sierpingraph::Frame::Tab::Grid;
+use App::GUI::Sierpingraph::Frame::Tab::Color;
+use App::GUI::Sierpingraph::Frame::Panel::Board;
+use App::GUI::Sierpingraph::Widget::ProgressBar;
 
 sub new {
     my ( $class, $parent, $title ) = @_;
@@ -30,11 +30,11 @@ sub new {
 
     # create GUI parts
     $self->{'tabs'}           = Wx::AuiNotebook->new($self, -1, [-1,-1], [-1,-1], &Wx::wxAUI_NB_TOP );
-    $self->{'tab'}{'general'} = App::GUI::Sierpingraph::Frame::Panel::Form->new( $self->{'tabs'} );
-    $self->{'tab'}{'grid'}    = App::GUI::Sierpingraph::Frame::Panel::Grid->new( $self->{'tabs'} );
-    $self->{'tab'}{'shape'}   = App::GUI::Sierpingraph::Frame::Panel::Grid->new( $self->{'tabs'} );
-    $self->{'tab'}{'bequest'} = App::GUI::Sierpingraph::Frame::Panel::Grid->new( $self->{'tabs'} );
-    $self->{'tab'}{'color'}   = App::GUI::Sierpingraph::Frame::Panel::Color->new( $self->{'tabs'}, $self->{'config'} );
+    $self->{'tab'}{'general'} = App::GUI::Sierpingraph::Frame::Tab::Form->new( $self->{'tabs'} );
+    $self->{'tab'}{'grid'}    = App::GUI::Sierpingraph::Frame::Tab::Grid->new( $self->{'tabs'} );
+    $self->{'tab'}{'shape'}   = App::GUI::Sierpingraph::Frame::Tab::Grid->new( $self->{'tabs'} );
+    $self->{'tab'}{'bequest'} = App::GUI::Sierpingraph::Frame::Tab::Grid->new( $self->{'tabs'} );
+    $self->{'tab'}{'color'}   = App::GUI::Sierpingraph::Frame::Tab::Color->new( $self->{'tabs'}, $self->{'config'} );
     $self->{'tabs'}->AddPage( $self->{'tab'}{'general'},  'General');
     $self->{'tabs'}->AddPage( $self->{'tab'}{'grid'},     'Grid');
     $self->{'tabs'}->AddPage( $self->{'tab'}{'shape'},    'Shape');
@@ -43,8 +43,8 @@ sub new {
 
     $self->{'tab'}{$_}->SetCallBack( sub { $self->sketch( ) } ) for qw/general grid/;
 
-    $self->{'progress'}            = App::GUI::Sierpingraph::Widget::ProgressBar->new( $self, 450, 5, [20, 20, 110]);
-    $self->{'board'}               = App::GUI::Sierpingraph::Frame::Part::Board->new( $self , 600, 600 );
+    $self->{'progress_bar'}        = App::GUI::Sierpingraph::Widget::ProgressBar->new( $self, 450, 5, [20, 20, 110]);
+    $self->{'board'}               = App::GUI::Sierpingraph::Frame::Panel::Board->new( $self , 600, 600 );
     $self->{'dialog'}{'about'}     = App::GUI::Sierpingraph::Dialog::About->new();
 
     my $btnw = 50; my $btnh     = 40;# button width and height
@@ -128,7 +128,7 @@ sub new {
     my $cmdi_sizer = Wx::BoxSizer->new( &Wx::wxHORIZONTAL );
     my $image_lbl = Wx::StaticText->new( $self, -1, 'Image:' );
     $cmdi_sizer->Add( $image_lbl,     0, $all_attr, 15 );
-    $cmdi_sizer->Add( $self->{'progress'},         0, &Wx::wxALIGN_LEFT | &Wx::wxALIGN_CENTER_VERTICAL| &Wx::wxALL, 10 );
+    $cmdi_sizer->Add( $self->{'progress_bar'},     0, &Wx::wxALIGN_LEFT | &Wx::wxALIGN_CENTER_VERTICAL| &Wx::wxALL, 10 );
     $cmdi_sizer->AddSpacer(5);
     $cmdi_sizer->Add( $self->{'btn'}{'draw'},      0, $all_attr, 5 );
     $cmdi_sizer->Add( 0, 0, &Wx::wxEXPAND | &Wx::wxGROW);
