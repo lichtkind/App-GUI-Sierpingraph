@@ -8,38 +8,39 @@ use Wx;
 package App::GUI::Sierpingraph::Frame::Tab::Color;
 use base qw/Wx::Panel/;
 
-use App::GUI::Sierpingraph::Frame::Panel::ColorBrowser;
+use App::GUI::Wx::Widget::Custom::ColorBrowser;
+use App::GUI::Wx::Widget::Custom::ColorDisplay;
+use App::GUI::Wx::Widget::Custom::PositionMarker;
 use App::GUI::Sierpingraph::Frame::Panel::ColorPicker;
 use App::GUI::Sierpingraph::Frame::Panel::ColorSetPicker;
-use App::GUI::Sierpingraph::Widget::ColorDisplay;
-use App::GUI::Sierpingraph::Widget::PositionMarker;
 use Graphics::Toolkit::Color qw/color/;
 
 our $default_color_def = $App::GUI::Sierpingraph::Frame::Panel::ColorSetPicker::default_color;
-my $default_settings = { 1=> 'blue', 2=> 'red', dynamic => 0, delta_S => 0, delta_L => 0 };
+my $default_settings = { 1=> 'black', 2=> 'red', 3=> 'orange', 4 => 'blue',
+                         dynamic => 0, delta_S => 0, delta_L => 0 };
 
 sub new {
-    my ( $class, $parent, $config ) = @_;
+    my ( $class, $parent, $config, $size ) = @_;
     my $self = $class->SUPER::new( $parent, -1);
 
     $self->{'call_back'}  = sub {};
     $self->{'config'}     = $config;
-    $self->{'color_count'} = 10;        # number of displayed colors
-    $self->{'active_color_count'} = 2;  # nr of currently used colors, overwritten on init
+    $self->{'color_count'} = $size;     # number of displayed colors
+    $self->{'active_color_count'} = 4;  # nr of currently used colors, overwritten on init
     $self->{'current_color_nr'} = 0;    # index starts from 0
-    $self->{'display_size'} = 33;
+    $self->{'display_size'} = 30;
 
-    $self->{'used_colors'}       = [ color('blue')->gradient( to => 'red', steps => $self->{'active_color_count'}) ];
-    $self->{'used_colors'}[$_]   = color( $default_color_def ) for $self->{'active_color_count'} .. $self->{'color_count'}-1;
-    $self->{'color_marker'}      = [ map { App::GUI::Sierpingraph::Widget::PositionMarker->new
+    $self->{'used_colors'}     = [ color('blue')->gradient( to => 'red', steps => $self->{'active_color_count'}) ];
+    $self->{'used_colors'}[$_] = color( $default_color_def ) for $self->{'active_color_count'} .. $self->{'color_count'}-1;
+    $self->{'color_marker'}    = [ map { App::GUI::Wx::Widget::Custom::PositionMarker->new
                                            ($self, $self->{'display_size'}, 20, $_, '', $default_color_def) } 0 .. $self->{'color_count'}-1 ];
-    $self->{'color_display'}[$_] = App::GUI::Sierpingraph::Widget::ColorDisplay->new
+    $self->{'color_display'}[$_] = App::GUI::Wx::Widget::Custom::ColorDisplay->new
         ($self, $self->{'display_size'}-2, $self->{'display_size'},
          $_, $self->{'used_colors'}[$_]->values(as => 'hash')      ) for 0 .. $self->{'color_count'}-1;
-    $self->{'color_marker'}[$_-1]->SetToolTip("used color number $_ to change (marked by arrow - crosses mark currently passive colors)") for 2 .. $self->{'color_count'};
-    $self->{'color_display'}[$_-1]->SetToolTip("used color number $_ to change (marked by arrow - crosses mark currently passive colors)") for 2 .. $self->{'color_count'};
-    $self->{'color_marker'}[0]->SetToolTip("color number 1, is always used, even when color flow is deactivated, click on it before change it with sliders below");
-    $self->{'color_display'}[0]->SetToolTip("color number 1, is always used, even when color flow is deactivated, click on it before change it with sliders below");
+    $self->{'color_marker'}[$_-1]->SetToolTip("color $_, to change (marked by arrow - crosses mark currently passive colors)") for 2 .. $self->{'color_count'};
+    $self->{'color_display'}[$_-1]->SetToolTip("color $_, to change (marked by arrow - crosses mark currently passive colors)") for 2 .. $self->{'color_count'};
+    $self->{'color_marker'}[0]->SetToolTip("color 1, often background color, shown where values do not converge");
+    $self->{'color_display'}[0]->SetToolTip("color 1, often background color, shown where values do not converge");
 
     $self->{'label'}{'color_set_store'} = Wx::StaticText->new($self, -1, 'Color Set Store' );
     $self->{'label'}{'color_set_funct'} = Wx::StaticText->new($self, -1, 'Colors Set Function' );
@@ -64,28 +65,27 @@ sub new {
     $self->{'widget'}{'delta_L'}->SetToolTip("max. lightness deviation when computing complement colors ( -100 .. 100)");
 
 
-    $self->{'picker'}    = App::GUI::Sierpingraph::Frame::Panel::ColorPicker->new( $self, $config->get_value('color') );
     $self->{'setpicker'} = App::GUI::Sierpingraph::Frame::Panel::ColorSetPicker->new( $self, $config->get_value('color_set'), $self->{'color_count'});
+    $self->{'picker'}    = App::GUI::Sierpingraph::Frame::Panel::ColorPicker->new( $self, $config->get_value('color') );
 
-    $self->{'browser'}   = App::GUI::Sierpingraph::Frame::Panel::ColorBrowser->new( $self, 'selected', {red => 0, green => 0, blue => 0} );
+    $self->{'browser'}   = App::GUI::Wx::Widget::Custom::ColorBrowser->new( $self, 'selected', {red => 0, green => 0, blue => 0} );
     $self->{'browser'}->SetCallBack( sub { $self->set_current_color( $_[0] ) });
 
     Wx::Event::EVT_LEFT_DOWN( $self->{'color_display'}[$_], sub { $self->set_current_color_nr( $_[0]->get_nr ) }) for 0 .. $self->{'color_count'}-1;
     Wx::Event::EVT_LEFT_DOWN( $self->{'color_marker'}[$_], sub { $self->set_current_color_nr( $_[0]->get_nr ) }) for 0 .. $self->{'color_count'}-1;
 
-
     Wx::Event::EVT_BUTTON( $self, $self->{'button'}{'gradient'}, sub {
         my @c = $self->get_all_colors;
-        my @new_colors = $c[0]->gradient( to => $c[ $self->{'current_color_nr'} ], in => 'RGB', steps => $self->{'current_color_nr'}+1, dynamic => $self->{'widget'}{'dynamic'}->GetValue);
-        $self->set_all_colors( @new_colors );
+        my @new_colors = $c[1]->gradient( to => $c[ $self->{'current_color_nr'} ], in => 'RGB', steps => $self->{'current_color_nr'}, dynamic => $self->{'widget'}{'dynamic'}->GetValue);
+        $self->set_all_colors( $c[0], @new_colors );
     });
     Wx::Event::EVT_BUTTON( $self, $self->{'button'}{'complement'}, sub {
         my @c = $self->get_all_colors;
-        my @new_colors = $c[ $self->{'current_color_nr'} ]->complement( steps => $self->{'current_color_nr'}+1,
-                                                                     saturation_tilt => $self->{'widget'}{'delta_S'}->GetValue,
-                                                                     lightness_tilt => $self->{'widget'}{'delta_L'}->GetValue );
+        my @new_colors = $c[ $self->{'current_color_nr'} ]->complement( steps => $self->{'current_color_nr'},
+                                                              saturation_tilt => $self->{'widget'}{'delta_S'}->GetValue,
+                                                               lightness_tilt => $self->{'widget'}{'delta_L'}->GetValue );
         push @new_colors, shift @new_colors;
-        $self->set_all_colors( @new_colors );
+        $self->set_all_colors( $c[0], @new_colors );
     });
     Wx::Event::EVT_BUTTON( $self, $self->{'button'}{'left'}, sub {
         my $pos = $self->get_current_color_nr;
@@ -116,26 +116,28 @@ sub new {
     $f_sizer->AddSpacer( 10 );
     $f_sizer->Add( $self->{'button'}{'gradient'},  0, $all_attr, 5 );
     $f_sizer->Add( $self->{'widget'}{'dynamic'},   0, $all_attr, 5 );
-    $f_sizer->AddSpacer( 25 );
+    $f_sizer->AddSpacer( 20 );
     $f_sizer->Add( $self->{'button'}{'complement'},0, $all_attr, 5 );
     $f_sizer->Add( $self->{'widget'}{'delta_S'},   0, $all_attr, 5 );
     $f_sizer->Add( $self->{'widget'}{'delta_L'},   0, $all_attr, 5 );
-    $f_sizer->AddSpacer( 25 );
+    $f_sizer->AddSpacer( 20 );
     $f_sizer->Add( $self->{'button'}{'left'},      0, $all_attr, 5 );
     $f_sizer->Add( $self->{'button'}{'right'},     0, $all_attr, 5 );
     $f_sizer->Add( 0, 1, &Wx::wxEXPAND | &Wx::wxGROW);
 
     my $state_sizer = $self->{'state_sizer'} = Wx::BoxSizer->new(&Wx::wxHORIZONTAL); # $self->{'plate_sizer'}->Clear(1);
-    $state_sizer->AddSpacer( 15 );
+    $state_sizer->AddSpacer( 12 );
     my @option_sizer;
     for my $nr (0 .. $self->{'color_count'}-1){
+        #$state_sizer->AddSpacer( 1 );
         $option_sizer[$nr] = Wx::BoxSizer->new( &Wx::wxVERTICAL );
         $option_sizer[$nr]->AddSpacer( 2 );
         $option_sizer[$nr]->Add( $self->{'color_display'}[$nr],0, $all_attr, 3);
         $option_sizer[$nr]->Add( $self->{'color_marker'}[$nr], 0, $all_attr, 3);
         $state_sizer->Add( $option_sizer[$nr],                 0, $all_attr, 6);
-        $state_sizer->AddSpacer( 3 );
+        #$state_sizer->AddSpacer( 1 );
     }
+    #$state_sizer->Insert( 2, Wx::StaticLine->new( $self, -1,[-1,-1],[-1,-1], &Wx::wxLI_VERTICAL), 0, &Wx::wxGROW);
     $state_sizer->Add( 0, 1, &Wx::wxEXPAND | &Wx::wxGROW);
 
     my $sizer = Wx::BoxSizer->new(&Wx::wxVERTICAL);

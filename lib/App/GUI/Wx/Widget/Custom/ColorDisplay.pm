@@ -1,11 +1,12 @@
 
-#
+# square that displays a color
 
-package App::GUI::Sierpingraph::Widget::ColorDisplay;
+package App::GUI::Wx::Widget::Custom::ColorDisplay;
+use base qw/Wx::Panel/;
 use v5.12;
 use warnings;
 use Wx;
-use base qw/Wx::Panel/;
+
 
 sub new {
     my ( $class, $parent, $x, $y, $nr, $init  ) = @_;

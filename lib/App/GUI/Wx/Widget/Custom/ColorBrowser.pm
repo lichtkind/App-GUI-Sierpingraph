@@ -1,13 +1,12 @@
 
 # panel with sliders to select a color
 
-package App::GUI::Sierpingraph::Frame::Panel::ColorBrowser;
+package App::GUI::Wx::Widget::Custom::ColorBrowser;
 use v5.12;
 use warnings;
 use Wx;
 use base qw/Wx::Panel/;
-use App::GUI::Sierpingraph::Widget::SliderCombo;
-use App::GUI::Sierpingraph::Widget::ColorDisplay;
+use App::GUI::Wx::Widget::Custom::SliderCombo;
 use Graphics::Toolkit::Color qw/color/;
 
 my $RGB = Graphics::Toolkit::Color::Space::Hub::get_space('RGB');
@@ -25,12 +24,12 @@ sub new {
     my @rgb = $init_color->values('RGB');
     my @hsl = $init_color->values('HSL');
 
-    $self->{'widget'}{'red'}   =  App::GUI::Sierpingraph::Widget::SliderCombo->new( $self, 365, ' R  ', "red part of $type color",    0, 255,  $rgb[0]);
-    $self->{'widget'}{'green'} =  App::GUI::Sierpingraph::Widget::SliderCombo->new( $self, 365, ' G  ', "green part of $type color",  0, 255,  $rgb[1]);
-    $self->{'widget'}{'blue'}  =  App::GUI::Sierpingraph::Widget::SliderCombo->new( $self, 365, ' B  ', "blue part of $type color",   0, 255,  $rgb[2]);
-    $self->{'widget'}{'hue'}   =  App::GUI::Sierpingraph::Widget::SliderCombo->new( $self, 365, ' H  ', "hue of $type color",         0, 359,  $hsl[0]);
-    $self->{'widget'}{'sat'}   =  App::GUI::Sierpingraph::Widget::SliderCombo->new( $self, 365, ' S   ', "saturation of $type color", 0, 100,  $hsl[1]);
-    $self->{'widget'}{'light'} =  App::GUI::Sierpingraph::Widget::SliderCombo->new( $self, 365, ' L   ', "lightness of $type color",  0, 100,  $hsl[2]);
+    $self->{'widget'}{'red'}   =  App::GUI::Wx::Widget::Custom::SliderCombo->new( $self, 350, ' R  ', "red part of $type color",    0, 255,  $rgb[0]);
+    $self->{'widget'}{'green'} =  App::GUI::Wx::Widget::Custom::SliderCombo->new( $self, 350, ' G  ', "green part of $type color",  0, 255,  $rgb[1]);
+    $self->{'widget'}{'blue'}  =  App::GUI::Wx::Widget::Custom::SliderCombo->new( $self, 350, ' B  ', "blue part of $type color",   0, 255,  $rgb[2]);
+    $self->{'widget'}{'hue'}   =  App::GUI::Wx::Widget::Custom::SliderCombo->new( $self, 350, ' H  ', "hue of $type color",         0, 359,  $hsl[0]);
+    $self->{'widget'}{'sat'}   =  App::GUI::Wx::Widget::Custom::SliderCombo->new( $self, 350, ' S   ', "saturation of $type color", 0, 100,  $hsl[1]);
+    $self->{'widget'}{'light'} =  App::GUI::Wx::Widget::Custom::SliderCombo->new( $self, 350, ' L   ', "lightness of $type color",  0, 100,  $hsl[2]);
     $self->{'button'}{'rnd_'.$_} = Wx::Button->new( $self, -1, '?',  [-1,-1], [30,25] ) for qw/red green blue hue sat light/;
     $self->{'button'}{'rnd_red'}->SetToolTip("randomize red value");
     $self->{'button'}{'rnd_green'}->SetToolTip("randomize green value");
@@ -75,7 +74,6 @@ sub new {
     $self->{'widget'}{'sat'}->SetCallBack( $hsl2rgb );
     $self->{'widget'}{'light'}->SetCallBack( $hsl2rgb );
 
-
     my $attr  = &Wx::wxALIGN_LEFT | &Wx::wxALIGN_CENTER_HORIZONTAL | &Wx::wxGROW;
     my $sizer = Wx::BoxSizer->new(&Wx::wxVERTICAL);
     $sizer->AddSpacer(5);
@@ -83,7 +81,7 @@ sub new {
         my $sub_sizer = Wx::BoxSizer->new( &Wx::wxHORIZONTAL );
         $sub_sizer->Add( $self->{'widget'}{$color}, 0, $attr| &Wx::wxLEFT, 15 );
         $sub_sizer->Add( 0, 1, &Wx::wxEXPAND | &Wx::wxGROW);
-        $sub_sizer->Add( $self->{'button'}{'rnd_'.$color}, 0, $attr| &Wx::wxRIGHT, 20 );
+        $sub_sizer->Add( $self->{'button'}{'rnd_'.$color}, 0, $attr| &Wx::wxRIGHT, 30 );
         $sizer->Add( $sub_sizer,  0, $attr| &Wx::wxBOTTOM, (($color eq 'blue') ? 25 : 10));
     }
     $self->SetSizer($sizer);

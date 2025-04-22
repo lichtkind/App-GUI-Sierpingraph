@@ -1,10 +1,12 @@
+
+#
+
+package App::GUI::Sierpingraph::Frame::Tab::Form;
 use v5.12;
 use warnings;
 use Wx;
-
-package App::GUI::Sierpingraph::Frame::Tab::Form;
 use base qw/Wx::Panel/;
-use App::GUI::Sierpingraph::Widget::SliderStep;
+use App::GUI::Wx::Widget::Custom::SliderStep;
 
 sub new {
     my ( $class, $parent) = @_;
@@ -41,13 +43,13 @@ sub new {
     $self->{'pos_x'}    = Wx::TextCtrl->new( $self, -1, 0, [-1,-1],  [100, -1] );
     $self->{'pos_y'}    = Wx::TextCtrl->new( $self, -1, 0, [-1,-1],  [100, -1] );
     $self->{'zoom'}     = Wx::TextCtrl->new( $self, -1, 0, [-1,-1],  [ 80, -1] );
-    $self->{'button_a'}    = App::GUI::Sierpingraph::Widget::SliderStep->new( $self, 90, 3, 0.3, 2, '<<', '>>' );
-    $self->{'button_b'}    = App::GUI::Sierpingraph::Widget::SliderStep->new( $self, 90, 3, 0.3, 2, '<<', '>>' );
-    $self->{'button_c'}    = App::GUI::Sierpingraph::Widget::SliderStep->new( $self, 90, 3, 0.3, 2, '<<', '>>' );
-    $self->{'button_d'}    = App::GUI::Sierpingraph::Widget::SliderStep->new( $self, 90, 3, 0.3, 2, '<<', '>>' );
-    $self->{'button_x'}    = App::GUI::Sierpingraph::Widget::SliderStep->new( $self, 90, 3, 0.3, 2, '<<', '>>' );
-    $self->{'button_y'}    = App::GUI::Sierpingraph::Widget::SliderStep->new( $self, 90, 3, 0.3, 2, '<<', '>>' );
-    $self->{'button_zoom'} = App::GUI::Sierpingraph::Widget::SliderStep->new( $self, 90, 3, 0.3, 2, '<<', '>>' );
+    $self->{'button_a'}    = App::GUI::Wx::Widget::Custom::SliderStep->new( $self, 90, 3, 0.3, 2, );
+    $self->{'button_b'}    = App::GUI::Wx::Widget::Custom::SliderStep->new( $self, 90, 3, 0.3, 2, );
+    $self->{'button_c'}    = App::GUI::Wx::Widget::Custom::SliderStep->new( $self, 90, 3, 0.3, 2, );
+    $self->{'button_d'}    = App::GUI::Wx::Widget::Custom::SliderStep->new( $self, 90, 3, 0.3, 2, );
+    $self->{'button_x'}    = App::GUI::Wx::Widget::Custom::SliderStep->new( $self, 90, 3, 0.3, 2, );
+    $self->{'button_y'}    = App::GUI::Wx::Widget::Custom::SliderStep->new( $self, 90, 3, 0.3, 2, );
+    $self->{'button_zoom'} = App::GUI::Wx::Widget::Custom::SliderStep->new( $self, 90, 3, 0.3, 2, );
     $self->{'exp'} = Wx::ComboBox->new( $self, -1, 2, [-1,-1],[75, 35], [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
     $self->{'exp'}->SetToolTip('exponent above iterator variable');
     $self->{'stop_value'}   = Wx::ComboBox->new( $self, -1, 1000, [-1,-1],[95, -1], [20, 40, 70, 100, 200, 500, 1000, 2000, 5000, 10000]);
@@ -189,14 +191,14 @@ sub new {
 
 sub init {
     my ( $self ) = @_;
-    $self->set_data ({ type => 'Mandelbrot', exp => 2,
+    $self->set_settings ({ type => 'Mandelbrot', exp => 2,
                        const_a => 0, const_b => 0, var_c => 0, var_d => 0,
                        pos_x => 0, pos_y => 0, zoom => 0, stop_value => 1000, stop_metric => '|var|' } );
 }
 
 sub zoom_size { 10 ** (-$_[0]->{'zoom'}->GetValue) }
 
-sub get_data {
+sub get_settings {
     my ( $self ) = @_;
     {
         type    => $self->{'type'}->GetString( $self->{'type'}->GetSelection ),
@@ -213,17 +215,17 @@ sub get_data {
     }
 }
 
-sub set_data {
-    my ( $self, $data ) = @_;
-    return 0 unless ref $data eq 'HASH' and exists $data->{'pos_x'};
+sub set_settings {
+    my ( $self, $settings ) = @_;
+    return 0 unless ref $settings eq 'HASH' and exists $settings->{'pos_x'};
     $self->PauseCallBack();
     for my $key (qw/const_a const_b var_c var_d pos_x pos_y zoom/){
-        next unless exists $data->{$key} and exists $self->{$key};
-        $self->{$key}->SetValue( $data->{$key} );
+        next unless exists $settings->{$key} and exists $self->{$key};
+        $self->{$key}->SetValue( $settings->{$key} );
     }
     for my $key (qw/type exp stop_value stop_metric/){
-        next unless exists $data->{$key} and exists $self->{$key};
-        $self->{$key}->SetSelection( $self->{$key}->FindString($data->{$key}) );
+        next unless exists $settings->{$key} and exists $self->{$key};
+        $self->{$key}->SetSelection( $self->{$key}->FindString($settings->{$key}) );
     }
     $self->RestoreCallBack();
     1;

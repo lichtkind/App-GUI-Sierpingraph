@@ -45,7 +45,7 @@ sub new {
     $sizer->Add( $self->{'close'}, 0, &Wx::wxGROW | &Wx::wxALL, 25 );
     $self->SetSizer( $sizer );
     $self->SetAutoLayout( 1 );
-    $self->SetSize( 550, 385 );
+    $self->SetSize( 550, 320 );
     $self->{'close'}->SetFocus;
     return $self;
 }

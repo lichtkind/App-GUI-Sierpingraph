@@ -4,7 +4,7 @@ use Wx;
 
 package App::GUI::Sierpingraph::Frame::Tab::Grid;
 use base qw/Wx::Panel/;
-use App::GUI::Sierpingraph::Widget::SliderStep;
+use App::GUI::Wx::Widget::Custom::SliderStep;
 
 sub new {
     my ( $class, $parent) = @_;
@@ -111,11 +111,11 @@ sub new {
 
 sub init {
     my ( $self ) = @_;
-    $self->set_data ({ color => 1,      select => 8,  repeat => 4, group => 1,
+    $self->set_settings ({ color => 1,      select => 8,  repeat => 4, group => 1,
                        gradient => 8, dynamics => 0,  smooth => 0, substeps => 0 } );
 }
 
-sub get_data {
+sub get_settings {
     my ( $self ) = @_;
     {
         color   => int $self->{'color'}->GetValue,
@@ -129,17 +129,17 @@ sub get_data {
     }
 }
 
-sub set_data {
-    my ( $self, $data ) = @_;
-    return 0 unless ref $data eq 'HASH' and exists $data->{'select'};
+sub set_settings {
+    my ( $self, $settings ) = @_;
+    return 0 unless ref $settings eq 'HASH' and exists $settings->{'select'};
     $self->PauseCallBack();
     for my $key (qw/color/){ # smooth
-        next unless exists $data->{$key} and exists $self->{$key};
-        $self->{$key}->SetValue( $data->{$key} );
+        next unless exists $settings->{$key} and exists $self->{$key};
+        $self->{$key}->SetValue( $settings->{$key} );
     }
     for my $key (qw/select repeat group gradient dynamics/){ # substeps
-        next unless exists $data->{$key} and exists $self->{$key};
-        $self->{$key}->SetSelection( $self->{$key}->FindString($data->{$key}) );
+        next unless exists $settings->{$key} and exists $self->{$key};
+        $self->{$key}->SetSelection( $self->{$key}->FindString($settings->{$key}) );
     }
     $self->RestoreCallBack();
     1;

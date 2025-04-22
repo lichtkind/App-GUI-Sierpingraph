@@ -1,4 +1,5 @@
-#
+
+# config file parser and data access
 
 package App::GUI::Sierpingraph::Config;
 use v5.12;
@@ -7,14 +8,14 @@ use File::HomeDir;
 use File::Spec;
 use App::GUI::Sierpingraph::Config::Default;
 
-my $file_name = File::Spec->catfile( File::HomeDir->my_home, '.config', 'sierpingraph');
+my $file_name = File::Spec->catfile( File::HomeDir->my_home, '.config', 'spirograph');
 my $dir = '';
 
 sub new {
     my ($pkg) = @_;
     my $data = -r $file_name
              ? load( $pkg, $file_name )
-             : $App::GUI::Sierpingraph::Config::Default::data;
+             : $ App::GUI::Sierpingraph::Config::Default::data;
     bless { path => $file_name, data => $data };
 }
 
@@ -79,21 +80,5 @@ sub add_setting_file {
     push @{$self->{'data'}{'last_settings'}}, $file;
     shift @{$self->{'data'}{'last_settings'}} if @{$self->{'data'}{'last_settings'}} > 15;
 }
-
-sub add_color {
-    my ($self, $name, $color) = @_;
-    return 'not a color' unless ref $color eq 'ARRAY' and @$color == 3
-        and int $color->[0] == $color->[0] and $color->[0] < 256 and $color->[0] >= 0
-        and int $color->[1] == $color->[1] and $color->[1] < 256 and $color->[1] >= 0
-        and int $color->[2] == $color->[2] and $color->[2] < 256 and $color->[2] >= 0;
-    return 'color name alread taken' if exists $self->{'data'}{'color'}{ $name };
-    $self->{'data'}{'color'}{ $name } = $color;
-}
-
-sub delete_color {
-    my ($self, $name) = @_;
-    delete $self->{'data'}{'color'}{ $name }
-}
-
 
 1;
